@@ -1,9 +1,8 @@
-package io.github.jkobejs.zio.google.cloud.oauth2.http4s.server2server.integration
+package io.github.jkobejs.zio.google.cloud.oauth2.sttp.server2server.integration
 
 import java.nio.file.{Files, Paths}
 import java.time.Instant
 
-import io.github.jkobejs.zio.google.cloud.oauth2.http4s.server2server.authenticator.Live
 import io.github.jkobejs.zio.google.cloud.oauth2.server2server.authenticator.{
   AuthApiClaims,
   AuthApiConfig,
@@ -13,12 +12,11 @@ import io.github.jkobejs.zio.google.cloud.oauth2.server2server.serviceaccountkey
   FS2ServiceAccountKeyReader,
   ServiceAccountKeyReader
 }
-import org.http4s.client.blaze.BlazeClientBuilder
+import io.github.jkobejs.zio.google.cloud.oauth2.sttp.server2server.authenticator.Live
+import sttp.client.asynchttpclient.zio.AsyncHttpClientZioBackend
 import zio.blocking.Blocking
-import zio.interop.catz._
 import zio.test.Assertion.equalTo
 import zio.test.{assert, suite, testM}
-import zio.{Task, ZIO}
 
 object DefaultAuthenticatorIntegrationSuite {
   val defaultAuthenticatorIntegrationSuite =
@@ -28,13 +26,7 @@ object DefaultAuthenticatorIntegrationSuite {
           val serviceAccountKeyReader =
             ServiceAccountKeyReader.>.readKey(io.github.jkobejs.zio.google.cloud.oauth2.BuildInfo.serviceAccountKeyPath)
 
-          val managedResource = ZIO
-            .runtime[Any]
-            .toManaged_
-            .flatMap { implicit rts =>
-              val exec = rts.platform.executor.asEC
-              BlazeClientBuilder[Task](exec).resource.toManaged
-            }
+          val managedResource = AsyncHttpClientZioBackend().toManaged_
             .map(Live.apply)
 
           for {
@@ -52,7 +44,7 @@ object DefaultAuthenticatorIntegrationSuite {
             authResponse <- Authenticator.>.auth(cloudApiConfig, cloudApiClaims).provideManaged(managedResource)
           } yield {
             assert(authResponse.tokenType, equalTo("Bearer"))
-            assert(authResponse.expiresAt.getEpochSecond() / 3600, equalTo(Instant.now().getEpochSecond() / 3600 + 1))
+            assert(authResponse.expiresAt.getEpochSecond / 3600, equalTo(Instant.now().getEpochSecond / 3600 + 1))
           }
         }
       )

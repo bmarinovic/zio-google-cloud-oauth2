@@ -1,13 +1,13 @@
 package io.github.jkobejs.zio.google.cloud.oauth2.http4s.server2server.http
 
 import cats.effect.Resource
+import io.github.jkobejs.zio.google.cloud.oauth2.server2server.http._
 import org.http4s.Response
 import org.http4s.client.Client
 import zio.Task
 import zio.interop.catz._
 import zio.test.Assertion.equalTo
 import zio.test.{assertM, suite, testM}
-import io.github.jkobejs.zio.google.cloud.oauth2.server2server.http._
 
 object Http4sClientSuite {
   val http4sClientSuite = suite("Http4s Client tests")(

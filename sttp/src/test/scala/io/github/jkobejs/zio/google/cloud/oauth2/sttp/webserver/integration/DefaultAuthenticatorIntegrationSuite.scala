@@ -1,10 +1,10 @@
-package io.github.jkobejs.zio.google.cloud.oauth2.http4s.webserver.integration
+package io.github.jkobejs.zio.google.cloud.oauth2.sttp.webserver.integration
 
 import java.nio.file.{Files, Paths}
 import java.time.Instant
 
 import io.github.jkobejs.zio.google.cloud.oauth2.utils.{Browser, RedirectionRouter}
-import io.github.jkobejs.zio.google.cloud.oauth2.http4s.webserver.authenticator.Live
+import io.github.jkobejs.zio.google.cloud.oauth2.sttp.webserver.authenticator.Live
 import io.github.jkobejs.zio.google.cloud.oauth2.webserver.authenticator.{
   AuthApiConfig,
   AuthRequestParams,
@@ -14,10 +14,9 @@ import io.github.jkobejs.zio.google.cloud.oauth2.webserver.oauthclientkey.{
   FS2OAuthClientKeyReader,
   OAuthClientKeyReader
 }
-import org.http4s.client.blaze.BlazeClientBuilder
 import org.http4s.server.blaze.BlazeServerBuilder
+import sttp.client.asynchttpclient.zio.AsyncHttpClientZioBackend
 import zio.blocking.Blocking
-import zio.interop.catz._
 import zio.test.Assertion.equalTo
 import zio.test.{assert, suite, testM}
 import zio.{Queue, Task, ZIO}
@@ -33,13 +32,7 @@ object DefaultAuthenticatorIntegrationSuite {
           val serviceAccountKeyReader =
             OAuthClientKeyReader.>.readKey(io.github.jkobejs.zio.google.cloud.oauth2.BuildInfo.oauthClientKeyPath)
 
-          val managedResource = ZIO
-            .runtime[Any]
-            .toManaged_
-            .flatMap { implicit rts =>
-              val exec = rts.platform.executor.asEC
-              BlazeClientBuilder[Task](exec).resource.toManaged
-            }
+          val managedResource = AsyncHttpClientZioBackend().toManaged_
             .map(Live.apply)
 
           def server(queue: Queue[String]) = ZIO.runtime[Any].flatMap { implicit rts =>

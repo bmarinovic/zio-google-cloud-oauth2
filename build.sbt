@@ -33,6 +33,18 @@ lazy val core = (project in file("core"))
   .settings(scalacOptions ++= scalacOptionsForVersion(scalaVersion.value))
   .settings(libraryDependencies ++= libraryDependenciesForVersion(scalaVersion.value))
   .settings(
+    libraryDependencies ++= Seq(
+      library.tsecCommon,
+      library.tsecJWTSig,
+      library.simulacrum,
+      library.magnolia,
+      library.fs2IO,
+      library.http4sCirce       % Test,
+      library.http4sDsl         % Test,
+      library.http4sBlazeServer % Test
+    )
+  )
+  .settings(
     buildInfoKeys := Seq[BuildInfoKey](
       name,
       version,
@@ -50,16 +62,22 @@ lazy val http4s = (project in file("http4s"))
     libraryDependencies ++= Seq(
       library.http4sCirce,
       library.http4sBlazeClient,
-      library.http4sDsl         % Test,
-      library.http4sBlazeServer % Test
+      library.http4sDsl % Test
     )
   )
   .dependsOn(core % "test->test;compile->compile")
 
 lazy val sttp = (project in file("sttp"))
-  .settings(moduleName := "zio-google-cloud-oauth2-sttp")
-  .settings(noPublishSettings)
-  .dependsOn(core)
+  .settings(commonSettingsForModule("zio-google-cloud-oauth2-sttp"))
+  .settings(scalacOptions ++= scalacOptionsForVersion(scalaVersion.value))
+  .settings(
+    libraryDependencies ++= Seq(
+      library.sttp,
+      library.sttpZioBackend,
+      library.sttpCirce
+    )
+  )
+  .dependsOn(core % "test->test;compile->compile")
 
 lazy val docs = (project in file("docs"))
   .settings(moduleName := "zio-google-cloud-oauth-docs")
@@ -108,15 +126,10 @@ def commonSettingsForModule(name: String) = Seq(
   moduleName := name,
   testFrameworks ++= Seq(new TestFramework("zio.test.sbt.ZTestFramework")),
   libraryDependencies ++= Seq(
-    library.tsecCommon,
-    library.tsecJWTSig,
     library.zio,
     library.zioInteropCats,
     library.zioMacros,
     library.zioMacrosTest,
-    library.simulacrum,
-    library.magnolia,
-    library.fs2IO,
     compilerPlugin(library.betterMonadicFor),
     library.zioTest    % Test,
     library.zioTestSbt % Test
@@ -186,29 +199,32 @@ lazy val libraryVersion = new {
   val magnolia         = "0.12.0"
   val cats             = "2.0.0-RC1"
   val fs2              = "2.0.1"
+  val sttp             = "2.0.0-RC5"
 }
 
 lazy val library =
   new {
-    val tsecCommon        = "io.github.jmcardon" %% "tsec-common"         % libraryVersion.tsec
-    val tsecJWTSig        = "io.github.jmcardon" %% "tsec-jwt-sig"        % libraryVersion.tsec
-    val http4sBlazeClient = "org.http4s"         %% "http4s-blaze-client" % libraryVersion.http4s
-    val http4sCirce       = "org.http4s"         %% "http4s-circe"        % libraryVersion.http4s
-    val http4sDsl         = "org.http4s"         %% "http4s-dsl"          % libraryVersion.http4s
-    val http4sBlazeServer = "org.http4s"         %% "http4s-blaze-server" % libraryVersion.http4s
-    val circeCore         = "io.circe"           %% "circe-core"          % libraryVersion.circe
-    val circeGeneric      = "io.circe"           %% "circe-generic"       % libraryVersion.circe
-    val zio               = "dev.zio"            %% "zio"                 % libraryVersion.zio
-    val zioInteropCats    = "dev.zio"            %% "zio-interop-cats"    % libraryVersion.zioInteropCats
-    val zioTest           = "dev.zio"            %% "zio-test"            % libraryVersion.zio
-    val zioTestSbt        = "dev.zio"            %% "zio-test-sbt"        % libraryVersion.zio
-    val zioMacros         = "dev.zio"            %% "zio-macros-core"     % libraryVersion.zioMacros
-    val zioMacrosTest     = "dev.zio"            %% "zio-macros-test"     % libraryVersion.zioMacros
-    val betterMonadicFor  = "com.olegpy"         %% "better-monadic-for"  % libraryVersion.betterMonadicFor
-    val simulacrum        = "org.typelevel"      %% "simulacrum"          % libraryVersion.simulacrum
-    val magnolia          = "com.propensive"     %% "magnolia"            % libraryVersion.magnolia
-    val fs2IO             = "co.fs2"             %% "fs2-io"              % libraryVersion.fs2
-
+    val tsecCommon        = "io.github.jmcardon"           %% "tsec-common"                   % libraryVersion.tsec
+    val tsecJWTSig        = "io.github.jmcardon"           %% "tsec-jwt-sig"                  % libraryVersion.tsec
+    val http4sBlazeClient = "org.http4s"                   %% "http4s-blaze-client"           % libraryVersion.http4s
+    val http4sCirce       = "org.http4s"                   %% "http4s-circe"                  % libraryVersion.http4s
+    val http4sDsl         = "org.http4s"                   %% "http4s-dsl"                    % libraryVersion.http4s
+    val http4sBlazeServer = "org.http4s"                   %% "http4s-blaze-server"           % libraryVersion.http4s
+    val circeCore         = "io.circe"                     %% "circe-core"                    % libraryVersion.circe
+    val circeGeneric      = "io.circe"                     %% "circe-generic"                 % libraryVersion.circe
+    val zio               = "dev.zio"                      %% "zio"                           % libraryVersion.zio
+    val zioInteropCats    = "dev.zio"                      %% "zio-interop-cats"              % libraryVersion.zioInteropCats
+    val zioTest           = "dev.zio"                      %% "zio-test"                      % libraryVersion.zio
+    val zioTestSbt        = "dev.zio"                      %% "zio-test-sbt"                  % libraryVersion.zio
+    val zioMacros         = "dev.zio"                      %% "zio-macros-core"               % libraryVersion.zioMacros
+    val zioMacrosTest     = "dev.zio"                      %% "zio-macros-test"               % libraryVersion.zioMacros
+    val betterMonadicFor  = "com.olegpy"                   %% "better-monadic-for"            % libraryVersion.betterMonadicFor
+    val simulacrum        = "org.typelevel"                %% "simulacrum"                    % libraryVersion.simulacrum
+    val magnolia          = "com.propensive"               %% "magnolia"                      % libraryVersion.magnolia
+    val fs2IO             = "co.fs2"                       %% "fs2-io"                        % libraryVersion.fs2
+    val sttp              = "com.softwaremill.sttp.client" %% "core"                          % libraryVersion.sttp
+    val sttpCirce         = "com.softwaremill.sttp.client" %% "circe"                         % libraryVersion.sttp
+    val sttpZioBackend    = "com.softwaremill.sttp.client" %% "async-http-client-backend-zio" % libraryVersion.sttp
   }
 
 addCommandAlias("fmt", "all scalafmtSbt scalafmt test:scalafmt")

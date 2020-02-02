@@ -1,4 +1,4 @@
-package io.github.jkobejs.zio.google.cloud.oauth2.server2server
+package io.github.jkobejs.zio.google.cloud.oauth2.http4s.server2server
 
 import io.github.jkobejs.zio.google.cloud.oauth2.http4s.server2server.http.Http4sClientSuite
 import io.github.jkobejs.zio.google.cloud.oauth2.http4s.server2server.integration.DefaultAuthenticatorIntegrationSuite
